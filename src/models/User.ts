@@ -1,60 +1,38 @@
-import axios, {AxiosResponse} from 'axios';
+import { Eventing } from './Eventing';
+import { Sync } from './Sync';
+import { Attributes } from './Attributes';
 
-interface UserProps {
+export interface UserProps {
   id?: number;
   name?: string;
   age?: number;
 }
 
-type Callback = () => void;
+const baseURL = 'http://localhost:3000/users';
 
 export class User {
-  events: {[key: string]: Callback[]};
-  baseURL: string;
-  constructor(private data: UserProps) {
-    this.baseURL = 'http://localhost:3000';
+  public events: Eventing = new Eventing();
+  public sync: Sync<UserProps> = new Sync<UserProps>(baseURL);
+  public attributes: Attributes<UserProps>;
+
+  constructor(data: UserProps) {
+    this.attributes = new Attributes<UserProps>(data);
   }
 
-  get(propName: string): number | string {
-    return this.data[propName];
+  get on() {
+    return this.events.on;
+  }
+
+  get trigger() {
+    return this.events.trigger;
+  }
+
+  get get() {
+    return this.attributes.get;
   }
 
   set(update: UserProps): void {
-    Object.assign(this.data, update);
-  }
-
-  on(eventName: string, callback: Callback): void {
-    const handlers = this.events[eventName] || [];
-    handlers.push(callback);
-    this.events[eventName] = handlers;
-  }
-
-  trigger(eventName: string): void {
-    const handlers = this.events[eventName];
-
-    if (!handlers || handlers.length === 0) {
-      return;
-    }
-
-    handlers.forEach((callback) => callback());
-  }
-
-  fetch(): void {
-    axios
-      .get(`${this.baseURL}users/${this.get('id')}`)
-      .then((response: AxiosResponse): void => {
-        this.set(response.data);
-      });
-  }
-
-  save(): void {
-    const id = this.get('id');
-
-    if (id) {
-      axios.put(`${this.baseURL}/users/${id}`, this.data);
-    }
-    else{
-      axios.post(`${this.baseURL}/users`, this.data)
-    }
+    this.attributes.set(update);
+    this.events.trigger('change');
   }
 }
