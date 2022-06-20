@@ -1,6 +1,4 @@
-import { User } from './models/User';
-import { UserForm } from './views/UserForm';
+import { UserList } from "./views/UserLIst";
+import { Collection } from "./models/Collection";
+import { UserProps } from "./models/User";
 
-const userForm = new UserForm(document.getElementById('root')!, User.buildUser({name: 'Norm', age: 25}));
-
-userForm.render();
