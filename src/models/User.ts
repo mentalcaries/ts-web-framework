@@ -1,6 +1,9 @@
-import { Eventing } from './Eventing';
-import { Sync } from './Sync';
-import { Attributes } from './Attributes';
+import { Model } from "./Model";
+import { Attributes } from "./Attributes";
+import { ApiSync } from "./ApiSync";
+import { Eventing } from "./Eventing";
+import { Collection } from "./Collection";
+
 
 export interface UserProps {
   id?: number;
@@ -10,29 +13,20 @@ export interface UserProps {
 
 const baseURL = 'http://localhost:3000/users';
 
-export class User {
-  public events: Eventing = new Eventing();
-  public sync: Sync<UserProps> = new Sync<UserProps>(baseURL);
-  public attributes: Attributes<UserProps>;
+export class User extends Model <UserProps>{
 
-  constructor(data: UserProps) {
-    this.attributes = new Attributes<UserProps>(data);
+  static buildUser(attrs: UserProps){
+    return new User(
+      new Attributes<UserProps>(attrs),
+      new Eventing(),
+      new ApiSync<UserProps>(baseURL)
+    )
+  }
+  static buildUserCollection(): Collection<User,UserProps>{
+    return new Collection<User, UserProps>(
+      'http://localhost:3000/users',
+      (json: UserProps) => User.buildUser(json)
+    );
   }
 
-  get on() {
-    return this.events.on;
-  }
-
-  get trigger() {
-    return this.events.trigger;
-  }
-
-  get get() {
-    return this.attributes.get;
-  }
-
-  set(update: UserProps): void {
-    this.attributes.set(update);
-    this.events.trigger('change');
-  }
 }
